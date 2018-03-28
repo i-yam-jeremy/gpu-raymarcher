@@ -1,4 +1,9 @@
 const InternalGraphicsEngine = require('../internal/engine').InternalGraphicsEngine;
+const Object2D = require('./object2D').Object2D;
+const Object3D = require('./object3D').Object3D;
+
+var internalGraphicsEngines = {};
+var graphicsEngineKey = 1;
 
 /*
 
@@ -15,35 +20,69 @@ class GraphicsEngine {
 
 	*/		
 	constructor(parentElement) {
-		var internalGraphicsEngine = new InternalGraphicsEngine(this, parentElement);		
-		Object.defineProperty(this, 'running', {
-			get: () => {
-				return internalGraphicsEngine.isRunning();
-			},
-			set: (shouldRun) => {
-				if (shouldRun && !internalGraphicsEngine.isRunning()) {
-					internalGraphicsEngine.start();
-				}
-				else if (!shouldRun && internalGraphicsEngine.isRunning()) {
-					
-				}
-			}
-		});
+		this.key = graphicsEngineKey++;
+		internalGraphicsEngines[this.key] = new InternalGraphicsEngine(this, parentElement);		
 	}
 
 	/* @return - boolean - true iff the graphics engine is running, false otherwise */
 	isRunning() {
-		return this.running;
+		return internalGraphicsEngines[this.key].isRunning();
 	}
 
 	/* Starts the graphics engine. */
 	start() {
-		this.running = true;
+		internalGraphicsEngines[this.key].start();
 	}
 
 	/* Stops the graphics engine */
 	stop() {
-		this.running = false;
+		internalGraphicsEngines[this.key].stop();
+	}
+
+	/* 
+	
+	Adds the given object to the engine
+	@param obj - (Object2D | Object3D) - the object to add to the engine
+
+	 */
+	add(obj) {
+		if (obj) {
+			if (obj instanceof Object2D) {
+				internalGraphicsEngines[this.key].add2D(obj);
+			}
+			else if (obj instanceof Object3D) {
+				internalGraphicsEngines[this.key].add3D(obj);
+			}
+			else {
+				throw {
+					message: "Unknown object type",
+					obj: obj
+				};
+			}
+		}
+	}
+
+	/*
+
+	Removes the given object from the engine
+	@param obj - (Object2D | Object3D) - the object to remove from the engine
+
+	*/
+	remove(obj) {
+		if (obj) {
+			if (obj instanceof Object2D) {
+				internalGraphicsEngines[this.key].remove2D(obj);
+			}
+			else if (obj instanceof Object3D) {
+				internalGraphicsEngines[this.key].remove3D(obj);
+			}
+			else {
+				throw {
+					message: "Unknown object type",
+					obj: obj
+				};
+			}
+		}
 	}
 
 }
