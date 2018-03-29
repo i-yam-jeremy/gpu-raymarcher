@@ -1,0 +1,12 @@
+{
+	"compileOptions": {
+		"target": "ES6",
+		"module": "CommonJS",
+		"outFile": "./test.js",
+		"rootDir": "./",
+		"removeComments": true
+	},
+	"include": [
+		"**/*"
+	]
+}
