@@ -1,1 +1,5 @@
+# Transpiled JS files
+*.js
+
+# Mac
 *.DS_Store

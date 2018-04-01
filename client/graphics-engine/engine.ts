@@ -41,7 +41,6 @@ export class GraphicsEngine {
 	 */
 	private tick(deltaTime: number): void {
 		//TODO
-		console.log("Tick");
 	}
 
 	/*
@@ -49,7 +48,13 @@ export class GraphicsEngine {
 	 */
 	private render(): void {
 		//TODO
-		console.log("Render");
+		this.dom.canvas2d.setAttribute('width', window.getComputedStyle(this.dom.canvas2d, null).getPropertyValue('width')); // FIXME find a more efficient solution to resizing game canvases
+		this.dom.canvas2d.setAttribute('height', window.getComputedStyle(this.dom.canvas2d, null).getPropertyValue('height'));
+		this.dom.canvas3d.setAttribute('width', window.getComputedStyle(this.dom.canvas3d, null).getPropertyValue('width'));
+		this.dom.canvas3d.setAttribute('height', window.getComputedStyle(this.dom.canvas3d, null).getPropertyValue('height'));
+
+		this.dom.ctx.clearRect(0, 0, 1000, 1000);
+		this.dom.ctx.fillText(Math.round(this.ticker.getFPS()).toString(), 100, 100);
 	}
 
 }

@@ -31,7 +31,7 @@ export class Ticker {
 	 * @param tickRate - the number of graphics engine ticks per second
 	 *
 	 */
-	constructor(tickCallback: TickCallback, renderCallback: RenderCallback, tickRate=120) {
+	constructor(tickCallback: TickCallback, renderCallback: RenderCallback, tickRate=180) {
 		this.fpsTracker = new FPSTracker();
 		this.tickCallback = tickCallback;
 		this.renderCallback = renderCallback;
@@ -73,7 +73,7 @@ export class Ticker {
 		if (this.running) {
 			const frameStartTime = Date.now();
 
-			this.fpsTracker.tick();
+			this.fpsTracker.frame();
 
 			this.tickAccumulator += (frameStartTime - this.lastFrameTime) / 1000;
 			while (this.tickAccumulator > this.tickStep) {
