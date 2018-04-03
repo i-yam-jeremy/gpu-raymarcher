@@ -3,6 +3,7 @@
  */
 export interface Event {
 
+
 	/*
 	 * The type of event
 	 */
@@ -39,24 +40,46 @@ export interface Event {
 export type EventCallback = (e: Event) => void;
 
 /*
- * FIXME try to find some way to make this an interface (or export a function called makeEvenetListener that can be used in the constructor of the object to make that object an event listener via mixin stuff)
+ * A mixin for handling events
+ *
+ * Usage:
+ * 	class YourClassName implements EventHandler {
+ * 		...
+ * 	}
+ *	applyMixins(YourClassName, [EventHandler]);
  */
-export class EventHandlerBackup {
+export class EventHandler {
 
-	private eventHandlers: { [eventType: string]: EventCallback[]  } = {};
+	/*
+	 * Stores event listener callbacks by event type
+	 */
+	private eventListeners: { [eventType: string]: EventCallback[]  } = {};
 
+	/*
+	 * Get all event listener callbacks of the given event type
+	 *
+	 * @param eventType - the type of event to get callbacks for
+	 * @return - the event callbacks of the given type currently bound to this object
+	 *
+	 */
 	protected getEventListeners(eventType: string): EventCallback[] {
-		return this.eventHandlers[eventType];
+		return this.eventListeners[eventType];
 	}
 
+	/*
+	 * Bind an event listener callback to this object to listen for events of the
+	 * specified type
+	 *
+	 * @param eventType - the type of event the callback is listening for
+	 * @param callback - called when an event of the specified type is received by this object
+	 */
 	public addEventListener(eventType: string, callback: EventCallback) {
-		if (!(eventType in this.eventHandlers)) {
-			this.eventHandlers[eventType] = [];
+		if (!(eventType in this.eventListeners)) {
+			this.eventListeners[eventType] = [];
 		}
-		this.eventHandlers[eventType].push(callback);
+		this.eventListeners[eventType].push(callback);
 	}
 	
 }
-
 
 
