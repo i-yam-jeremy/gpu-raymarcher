@@ -91,10 +91,10 @@ export class GraphicsEngine {
 		this.dom.canvas3d.setAttribute('height', window.getComputedStyle(this.dom.canvas3d, null).getPropertyValue('height'));
 
 		if (this.scene != undefined) {
-			this.scene.render();
+			this.scene.render(this.dom.gl);
 		}
 		if (this.ui != undefined) {
-			this.ui.render();
+			this.ui.render(this.dom.ctx);
 		}
 
 	}

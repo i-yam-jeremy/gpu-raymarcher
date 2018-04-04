@@ -1,11 +1,16 @@
+import {Object3d} from "./object3d";
+
 export class Scene {
-	//TODO
+
 	
+	private objects: Object3d[];
+	//TODO
+
 	public tick(deltaTime: number): void {
-		//TODO
+		this.objects.forEach((obj) => obj.tick(deltaTime));	
 	}
 
-	public render(): void {
+	public render(gl: WebGLRenderingContext): void {
 		//TODO
 	}
 }
