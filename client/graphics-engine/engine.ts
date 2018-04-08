@@ -1,5 +1,6 @@
 import {GraphicsEngineDOM} from "./util/dom";
 import {Ticker} from "./util/ticker";
+import {GLManager} from "./util/gl";
 import {UI} from "./2d";
 import {Scene} from "./3d";
 
@@ -90,12 +91,7 @@ export class GraphicsEngine {
 		this.dom.canvas3d.setAttribute('width', window.getComputedStyle(this.dom.canvas3d, null).getPropertyValue('width'));
 		this.dom.canvas3d.setAttribute('height', window.getComputedStyle(this.dom.canvas3d, null).getPropertyValue('height'));
 
-		if (this.scene != undefined) {
-			this.scene.render(this.dom.gl);
-		}
-		if (this.ui != undefined) {
-			this.ui.render(this.dom.ctx);
-		}
+		GLManager.render(this.dom.gl, this.scene, this.ui);
 
 	}
 
