@@ -1,6 +1,6 @@
 # TODO
 
-1) Make all rendering (both 2d and 3d) use WebGL  
+1) ~~Make all rendering (both 2d and 3d) use WebGL~~  
 2) Make a node-based structure for defining distance functions (2d and 3d)  
 	A node-based structure means that distance functions are composed of simpler individual nodes such as, circle, square, union, scale, etc.  
 3) Write code to compile the node-based structure to a GLSL fragment shader  
