@@ -1,5 +1,5 @@
 import {RenderableObject, Model} from "../objects";
-import {VERTEX_SHADER_SOURCE, transpileFragmentShaderSource} from "./glsl";
+import {VERTEX_SHADER_SOURCE, generateFragmentShaderSource} from "./glsl";
 
 /* used for uniform locations from gl.getUniformLocation(...) */
 type UniformLocation = number;
@@ -63,7 +63,7 @@ export class GLManager {
 		this.program = this.gl.createProgram();
 
 		this.vertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
-		this.fragmentShader = this.createShader(gl.FRAGMENT_SHADER, this.generateFragmentShaderSource(models));
+		this.fragmentShader = this.createShader(gl.FRAGMENT_SHADER, generateFragmentShaderSource(models));
 
 		gl.attachShader(this.program, this.vertexShader);
 		gl.attachShader(this.program, this.fragmentShader);
@@ -95,21 +95,6 @@ export class GLManager {
 		gl.vertexAttribPointer(this.vertexAttrib, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
-	}
-	
-	/*
-	 * Generate the GLSL source for the fragment source based on the given models
-	 *
-	 * @param models - the models to incorporate into the shader source
-	 * @return the GLSL source
-	 */
-	private generateFragmentShaderSource(models: Model[]): string {
-		var modelSource = "";
-		models.forEach((model, id) => {
-			modelSource += model.compile(id) + "\n";
-		});
-
-		return transpileFragmentShaderSource({"model_source": modelSource});
 	}
 
 	/*
