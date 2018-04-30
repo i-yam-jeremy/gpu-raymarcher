@@ -15,6 +15,9 @@ describe("GLSL", function () {
 	});
 	
 	describe("generateSceneSDFGLSLBranchingCode", function () {
+		it("modelCount=0", function () {
+			assert.equal(generateSceneSDFGLSLBranchingCode(0), "");
+		});
 		it("modelCount=1", function () {
 			assert.equal(generateSceneSDFGLSLBranchingCode(1), "if (id == 0) { return sdf_0(p); }\n");
 		});
