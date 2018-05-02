@@ -1,8 +1,6 @@
 import {RenderableObject, Model} from "../objects";
 import {VERTEX_SHADER_SOURCE, generateFragmentShaderSource} from "./glsl";
 
-/* used for uniform locations from gl.getUniformLocation(...) */
-type UniformLocation = number;
 /* used for attribute locations from gl.getAttribLocation(...) */
 type AttribLocation = number;
 
@@ -42,6 +40,14 @@ export class GLManager {
 	private vertexBuffer: WebGLBuffer;
 	/* the vertex attribute location for the vertex buffer */
 	private vertexAttrib: AttribLocation;
+	/* the frame number uniform location */
+	private uTime: WebGLUniformLocation;
+	/* the camera pos uniform location */
+	private uCameraPos: WebGLUniformLocation;
+	/* the time in milliseconds of the start of the last frame rendered */
+	private lastFrameTime: number;
+	/* the total number of seconds this has been running */
+	private time: number;
 
 	/*
 	 * @param gl - manages the given WebGLRenderingContext
@@ -50,6 +56,8 @@ export class GLManager {
 		this.gl = gl;
 		this.updateShaders([]);
 		this.vertexBuffer = this.createVertexBuffer();
+		this.time = 0;
+		this.lastFrameTime = Date.now();
 	}
 
 	/*
@@ -79,12 +87,42 @@ export class GLManager {
 
 		this.vertexAttrib = gl.getAttribLocation(this.program, "pos");
 		gl.enableVertexAttribArray(this.vertexAttrib);	
+	
+		this.setUniformLocations(this.program);
+	}
+
+	/*
+	 * Sets the uniform location fields of this object to the uniform locations in the given GLProgram
+	 *
+	 * @param program - the current program
+	 */
+	private setUniformLocations(program: WebGLProgram) {
+		var gl = this.gl;
+		
+		this.uTime = gl.getUniformLocation(program, "u_time");
+		this.uCameraPos = gl.getUniformLocation(program, "u_camera_pos");
+
+		
+	}
+
+	/*
+	 * Sets uniforms to the correct values
+	 * Called once per frame
+	 */
+	private setUniforms(): void {
+		var gl = this.gl;
+
+		gl.uniform3fv(this.uCameraPos, [0, 0, 0]);
+		gl.uniform1f(this.uTime, this.time);
 	}
 
 	/*
 	 * Render one frame using the fragment shader
 	 */
 	public render(): void {
+		this.time += (Date.now() - this.lastFrameTime) / 1000;
+		this.lastFrameTime = Date.now();
+		
 		var gl = this.gl;
 
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // TODO make this more efficient by not using gl.canvas to get width and height
@@ -93,6 +131,8 @@ export class GLManager {
 		gl.useProgram(this.program);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
 		gl.vertexAttribPointer(this.vertexAttrib, 2, gl.FLOAT, false, 0, 0);
+
+		this.setUniforms();
 
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	}
