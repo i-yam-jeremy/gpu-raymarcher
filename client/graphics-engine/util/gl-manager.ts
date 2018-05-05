@@ -70,8 +70,6 @@ export class GLManager {
 
 		this.program = this.gl.createProgram();
 
-
-		console.log(generateFragmentShaderSource(models));
 		this.vertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
 		this.fragmentShader = this.createShader(gl.FRAGMENT_SHADER, generateFragmentShaderSource(models));
 

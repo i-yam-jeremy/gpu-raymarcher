@@ -6,3 +6,6 @@
 
 # Vim
 *.swp
+
+# Test temporary sources
+test_tmp/*

@@ -1,18 +1,36 @@
 import {Model} from "../objects";
 import {FileBundle} from "../../file-bundle";
 
+/*
+ * Contains data for GLSL vectors
+ */
 abstract class GLSLVec {
 
+	/* the data stored in this vector */
 	protected data: number[];
 
+	/*
+	 * Creates a GLSL vector with the specified data
+	 * 
+	 * @param data - the data
+	 */
 	constructor(data: number[]) {
 		this.data = data;
 	}
 
 }
 
+/*
+ * A 3D GLSL vector
+ * Equivalent to vec3
+ */
 export class GLSLVec3 extends GLSLVec {
 
+	/*
+	 * Creates a 3D GLSL vector with the specified data
+	 *
+	 * @param data - the data (must be of length 3)
+	 */
 	constructor(data: number[]) {
 		if (data.length == 3) {
 			super(data);
@@ -22,7 +40,11 @@ export class GLSLVec3 extends GLSLVec {
 		}
 	}
 
-	public toString(): string {
+	/*
+	 * Converts this vector into a GLSL constant expression
+	 * representing the same data
+	 */
+	public toGLSLString(): string {
 		return 'vec3(' + this.data.join(', ') + ')';
 	}
 
@@ -138,20 +160,63 @@ function transpileFragmentShaderSource(params: { [ name: string ] : any }): stri
 	return source;
 }
 
-function getModelSDFFunctionName(id: number): string {
-	return "sdf_" + id;
+/*
+ * Returns the model specific function name given the generic base name for the function
+ *
+ * @param baseName - the generic name of the function
+ * @param modelId - the ID of the model
+ *
+ * @return - the name of the model specific function
+ */
+function getModelFunctionName(baseName: string, modelId: number) {
+	return baseName + "_" + modelId;
 }
 
-
+/*
+ * Generates the branching GLSL code for calling the model specific SDF function
+ * based on the ID.
+ *
+ * @param modelCount - the number of models (and therefore the number of model specific SDF functions)
+ *
+ * @return - the GLSL code for branching and calling a specific SDF when given the model ID
+ */
 function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
 	function generateBranches(startId: number, endId: number): string {
 		if (startId+1 == endId) {
-			return "if (id == " + startId + ") { return Distance(" + startId + ", " + getModelSDFFunctionName(startId) + "(p)); }\n";
+			return "if (modelId == " + startId + ") { return Distance(" + startId + ", " + getModelFunctionName('sdf', startId) + "(p)); }\n";
 		}
 		else {
 			var midpoint = (startId + endId) / 2;
-			return "if (id < " + midpoint + ") {\n" + generateBranches(startId, midpoint) + "}\n" +
+			return "if (modelId < " + midpoint + ") {\n" + generateBranches(startId, midpoint) + "}\n" +
+				"else {\n" + generateBranches(midpoint, endId) + "}\n";
+		}
+	}
+	if (modelCount == 0) {
+		return "";
+	}
+	else {
+		return generateBranches(0, nearestLargerPowerOfTwoModelCount);
+	}
+}
+
+/*
+ * Generates the branching GLSL code for calling the model specific shader function
+ * based on the ID.
+ *
+ * @param modelCount - the number of models (and therefore the number of model specific shader functions)
+ *
+ * @return - the GLSL code for branching and calling a specific model shader when given the model ID
+ */
+function generateModelShaderGLSLBranchingCode(modelCount: number) {
+	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
+	function generateBranches(startId: number, endId: number): string {
+		if (startId+1 == endId) {
+			return "if (modelId == " + startId + ") { return " + getModelFunctionName('shade', startId) + "(p, normal, light_dir); }\n";
+		}
+		else {
+			var midpoint = (startId + endId) / 2;
+			return "if (modelId < " + midpoint + ") {\n" + generateBranches(startId, midpoint) + "}\n" +
 				"else {\n" + generateBranches(midpoint, endId) + "}\n";
 		}
 	}
@@ -190,6 +255,7 @@ export function generateFragmentShaderSource(models: Model[]): string {
 	});
 	return transpileFragmentShaderSource({
 		"model_source": modelSource,
-		"scene_sdf_branching_code": generateSceneSDFGLSLBranchingCode(models.length)
+		"scene_sdf_branching_code": generateSceneSDFGLSLBranchingCode(models.length),
+		"model_shader_branching_code": generateModelShaderGLSLBranchingCode(models.length)
 	});
 }
