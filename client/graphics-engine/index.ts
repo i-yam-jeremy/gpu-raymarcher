@@ -1,8 +1,9 @@
 import {GraphicsEngine} from "./engine";
 import {Scene} from "./scene";
-import {RenderableObject, Model} from "./objects";
+import {RenderableObject, Model, SDF, Shader} from "./objects";
 
 export {
 	GraphicsEngine,
-	Scene
+	Scene,
+	RenderableObject, Model, SDF, Shader
 };

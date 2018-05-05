@@ -33,7 +33,7 @@ Distance min_d(Distance a, Distance b) {
 
 Distance scene_sdf(int id, vec3 p) {
 	%%scene_sdf_branching_code%%
-	return Distance(0, length(p - vec3(sin(10.0*u_time), 0.5, 10)) - 0.3);
+	//return Distance(0, length(p - vec3(sin(2.0*u_time)+1.0, 0.5, 10)) - 0.3);
 	return Distance(-1, 0.0);
 }
 

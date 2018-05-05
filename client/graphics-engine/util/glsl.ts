@@ -1,6 +1,84 @@
 import {Model} from "../objects";
 import {FileBundle} from "../../file-bundle";
 
+abstract class GLSLVec {
+
+	protected data: number[];
+
+	constructor(data: number[]) {
+		this.data = data;
+	}
+
+}
+
+export class GLSLVec3 extends GLSLVec {
+
+	constructor(data: number[]) {
+		if (data.length == 3) {
+			super(data);
+		}
+		else {
+			throw 'Array must have 3 elements';
+		}
+	}
+
+	public toString(): string {
+		return 'vec3(' + this.data.join(', ') + ')';
+	}
+
+}
+
+/*
+ * A GLSL function
+ */
+export class GLSLFunction {
+
+	/* the return type */
+	readonly returnType: string;
+	/*
+	 * the parameters of this function with their types included
+	 * 
+	 * example: ["vec3 p", "float a", "int b"]
+	 */
+	readonly params: string[];
+	/*
+	 * the source / body of this function
+	 */
+	readonly source: string;
+
+	/*
+	 * Creates a GLSLFunction
+	 *
+	 * @param returnType - the return type
+	 * @param params - the params with their types included
+	 * @param source - the source / body of the function
+	 *
+	 */
+	constructor(returnType: string, params: string[], source: string) {
+		this.returnType = returnType;
+		this.params = params;
+		this.source = source;
+	}
+
+	/*
+	 * Converts this function to GLSL source using the given name as the function name
+	 *
+	 * @param name - the name of the function
+	 *
+	 * @return - GLSL source
+	 */
+	public compile(name: string): string {
+		return this.returnType + " " + name + "(" + this.params.join(", ") + ") {\n" + this.source + "\n}\n";
+	}
+
+}
+
+/*
+ * A type for collections of GLSL functions
+ * function name -> function
+ */
+export type GLSLFunctionSet = { [funcname: string] : GLSLFunction};
+
 /*
  * GLSL vertex shader source
  */
@@ -69,7 +147,7 @@ function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
 	function generateBranches(startId: number, endId: number): string {
 		if (startId+1 == endId) {
-			return "if (id == " + startId + ") { return " + getModelSDFFunctionName(startId) + "(p); }\n";
+			return "if (id == " + startId + ") { return Distance(" + startId + ", " + getModelSDFFunctionName(startId) + "(p)); }\n";
 		}
 		else {
 			var midpoint = (startId + endId) / 2;
@@ -86,6 +164,20 @@ function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 }
 
 /*
+ * Compiles a set of GLSL functions using the specified model ID
+ *
+ * @param fSet - the set of GLSL functions
+ * @param modelId - the ID of the model that these functions are related to
+ *
+ * @return - the GLSL source
+ */
+function compileFunctionSet(fSet: GLSLFunctionSet, modelId: number): string {
+	return Object.keys(fSet).map((fname) => {
+		return fSet[fname].compile(fname + "_" + modelId);
+	}).join("\n");
+}
+
+/*
  * Generates the GLSL fragment shader source from the given models
  *
  * @param models - the models to incorporate into the shader source
@@ -94,7 +186,7 @@ function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 export function generateFragmentShaderSource(models: Model[]): string {
 	var modelSource = "";
 	models.forEach((model, id) => {
-		modelSource += model.compile(id) + "\n";
+		modelSource += compileFunctionSet(model.compile(), id) + "\n";
 	});
 	return transpileFragmentShaderSource({
 		"model_source": modelSource,

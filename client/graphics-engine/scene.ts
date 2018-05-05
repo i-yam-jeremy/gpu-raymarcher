@@ -18,6 +18,7 @@ export class Scene {
 	 */
 	constructor() {
 		this.objects = [];
+		this.uniqueModels = [];
 	}
 
 	/*
@@ -53,6 +54,7 @@ export class Scene {
 		var index = this.objects.indexOf(obj);
 		if (index != -1) {
 			this.objects.splice(index, 1);
+			//TODO FIXME possibly remove element from uniqueModels
 		}
 	}
 
