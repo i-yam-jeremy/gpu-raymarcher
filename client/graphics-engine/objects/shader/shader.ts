@@ -1,4 +1,4 @@
-import {GLSLFunctionSet} from "../../util/glsl";
+import {GLSLFunction} from "../../util/glsl";
 import {ShaderNode} from "./shader-node";
 import {ShaderNodeLoader} from "./shader-node-loader";
 
@@ -36,9 +36,9 @@ export class Shader {
 	/*
 	 * Converts this shader into GLSL code
 	 *
-	 * @return - the set of functions defined by this shader
+	 * @return - this shader function
 	 */
-	public compile(): GLSLFunctionSet {
+	public compile(): GLSLFunction {
 		return this.node.compile();
 	}
 

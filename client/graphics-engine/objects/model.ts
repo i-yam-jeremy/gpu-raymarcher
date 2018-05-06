@@ -30,7 +30,10 @@ export class Model {
 	 * @return - the set of functions needed by this model
 	 */
 	public compile(): GLSLFunctionSet {
-		return (<any>Object).assign({}, this.sdf.compile(), this.shader.compile());
+		return {
+			"sdf": this.sdf.compile(),
+			"shade": this.shader.compile()
+		};
 	}
 
 }

@@ -1,5 +1,5 @@
 import {ShaderNode, ShaderNodeData} from "../shader-node";
-import {GLSLFunctionSet, GLSLFunction, GLSLVec3} from "../../../util/glsl";
+import {GLSLFunction, GLSLFunctionType} from "../../../util/glsl";
 
 /*
  * Shader for Lambertian reflectance
@@ -15,6 +15,10 @@ export class Lambert extends ShaderNode {
 	private diffuseAmount: ShaderNode;
 	/* the color of diffuse reflectance */
 	private diffuseColor: ShaderNode;
+	/* the surface normal of the model at the point to be shaded */
+	private normal: ShaderNode;
+	/* the direction of incoming light towards the point to be shaded */
+	private lightDir: ShaderNode;
 
 	/*
 	 * Creates a Lambert shader with the specified fields
@@ -23,14 +27,18 @@ export class Lambert extends ShaderNode {
 	 * @param ambientColor - the color of ambient reflectance
 	 * @param diffuseAmount - the color of diffuse reflectance
 	 * @param diffuseColor - the color of diffuse reflectance
+	 * @param normal - the surface normal of the model at the point to be shaded
+	 * @param light_dir - the incoming light direction
 	 *
 	 */
-	constructor(ambientAmount: ShaderNode, ambientColor: ShaderNode, diffuseAmount: ShaderNode, diffuseColor: ShaderNode) {
+	constructor(ambientAmount: ShaderNode, ambientColor: ShaderNode, diffuseAmount: ShaderNode, diffuseColor: ShaderNode, normal: ShaderNode, lightDir: ShaderNode) {
 		super();
 		this.ambientAmount = ambientAmount;
 		this.ambientColor = ambientColor;
 		this.diffuseAmount = diffuseAmount;
 		this.diffuseColor = diffuseColor;
+		this.normal = normal;
+		this.lightDir = lightDir;
 	}
 
 	/*
@@ -48,7 +56,9 @@ export class Lambert extends ShaderNode {
 	 * 	"diffuse": {
 	 *		"amount": <number>,
 	 *		"color": <vec3>
-	 * 	}
+	 * 	},
+	 * 	"normal": <vec3>,
+	 * 	"light_dir": <vec3>
 	 * }
 	 *
 	 * @return - a Lambert shader
@@ -56,9 +66,11 @@ export class Lambert extends ShaderNode {
 	public static create(nodeData: ShaderNodeData): Lambert {
 		return new Lambert(
 			nodeData.ambient.amount,
-			new GLSLVec3(nodeData.ambient.color),
+			nodeData.ambient.color,
 			nodeData.diffuse.amount,
-			new GLSLVec3(nodeData.diffuse.color)
+			nodeData.diffuse.color,
+			nodeData.normal,
+			nodeData.light_dir
 		);
 	}
 
@@ -67,28 +79,24 @@ export class Lambert extends ShaderNode {
 	 *
 	 * @return - the GLSLFunctionSet specifying the shade function for this shader
 	 */
-	public compile(): GLSLFunctionSet {
-		var definedFunctions =
+	public compile(): GLSLFunction {
+		return new GLSLFunction(GLSLFunctionType.SHADER,
+			'vec3', 
 			{
-				'shade': new GLSLFunction('vec3', ['vec3 p', 'vec3 normal', 'vec3 light_dir'], `
-					float ambient_amount = float(` + this.ambientAmount.toInlineGLSL() + `);
-					vec3 ambient_color = ` + this.ambientColor.toInlineGLSL() + `;
-					float diffuse_amount = float(` + this.diffuseAmount.toInlineGLSL() + `);
-					vec3 diffuse_color = ` + this.diffuseColor.toInlineGLSL() + `;
-					return ambient_amount*ambient_color + diffuse_amount*diffuse_color*dot(normal, light_dir);
-				`)
-			};
-		return (<any>Object).assign({}, definedFunctions, this.ambientAmount.compile(), this.ambientColor.compile(),
-								  this.diffuseAmount.compile(), this.diffuseColor.compile());
+				"ambient_amount": this.ambientAmount.compile(),
+				"ambient_color": this.ambientColor.compile(),
+				"diffuse_amount": this.diffuseAmount.compile(),
+				"diffuse_color": this.diffuseColor.compile(),
+				"normal": this.normal.compile(),
+				"light_dir": this.lightDir.compile()
+			},
+		`
+				float ambient_amount = float($$ambient_amount$$);
+				vec3 ambient_color = $$ambient_color$$;
+				float diffuse_amount = float($$diffuse_amount$$);
+				vec3 diffuse_color = $$diffuse_color$$;
+				return ambient_amount*ambient_color + diffuse_amount*diffuse_color*dot($$normal$$, $$light_dir$$);
+		`);
 	}
 
-	//TODO some system where each call to compile exports only 1 function, and a list of named dependencies as children (maybe make depedencies a field in GLSLFunction)
-	// then the exported function will have all the data it needs (and can name it's internal function as subnames of it's name, for example, if a function was called node_1 and it had 2 children they'd be named node_1_0 and node_1_1 so there are no naming conflicts. Then there is only one function returned and it only returns one value which is correct. Get rid of GLSLFunctionSet
-
-	/*
-	 *
-	 */
-	public toInlineGLSL(): string {
-		
-	}
 }

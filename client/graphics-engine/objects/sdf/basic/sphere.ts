@@ -1,5 +1,5 @@
 import {SDFNode, SDFNodeData} from "../sdf-node";
-import {GLSLFunctionSet, GLSLFunction} from "../../../util/glsl";
+import {GLSLFunction, GLSLFunctionType} from "../../../util/glsl";
 
 /*
  * An SDF node for a sphere
@@ -7,14 +7,14 @@ import {GLSLFunctionSet, GLSLFunction} from "../../../util/glsl";
 export class Sphere extends SDFNode {
 
 	/* the radius of the sphere */
-	private radius: number;
+	private radius: SDFNode;
 
 	/*
 	 * Creates a sphere node with the given radius
 	 *
 	 * @param radius - the radius of the sphere
 	 */
-	constructor(radius: number) {
+	constructor(radius: SDFNode) {
 		super();
 		this.radius = radius;
 	}
@@ -38,12 +38,16 @@ export class Sphere extends SDFNode {
 	/*
 	 * Converts this sphere node to GLSL code
 	 *
-	 * @return - the set of functions defined by this node
+	 * @return - the SDF function 
 	 */
-	public compile(): GLSLFunctionSet {
-		return {
-			'sdf': new GLSLFunction('float', ['vec3 p'], 'return length(p) - float(' + this.radius + ');')
-		};
+	public compile(): GLSLFunction {
+		return new GLSLFunction(GLSLFunctionType.SDF,
+			'float', 
+			{
+				"radius": this.radius.compile()
+			}, 
+			'return length(p) - float($$radius$$);'
+		);
 	}
 
 }

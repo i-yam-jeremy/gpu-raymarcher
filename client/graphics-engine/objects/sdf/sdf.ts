@@ -1,4 +1,4 @@
-import {GLSLFunctionSet} from "../../util/glsl";
+import {GLSLFunction} from "../../util/glsl";
 import {SDFNode} from "./sdf-node";
 import {SDFNodeLoader} from "./sdf-node-loader";
 
@@ -31,9 +31,9 @@ export class SDF {
 	/*
 	 * Converts this SDF to GLSL code
 	 *
-	 * @return - the set of functions needed by this SDF
+	 * @return - the SDF function
 	 */
-	public compile(): GLSLFunctionSet {
+	public compile(): GLSLFunction {
 		return this.node.compile();
 	}
 

@@ -1,6 +1,7 @@
 import {SDFNode, SDFNodeData} from "./sdf-node";
 
-import {Sphere} from "./primitives/sphere";
+import {ConstantNode} from "./basic/constant";
+import {Sphere} from "./basic/sphere";
 
 /* a function that creates an SDFNode from given SDFNodeData */
 type SDFNodeCreator = (nodeData: SDFNodeData) => SDFNode;
@@ -25,6 +26,14 @@ export class SDFNodeLoader {
 	 */
 	public static fromDataObject(nodeData: SDFNodeData): SDFNode {
 		if (nodeData['type'] in NODE_TABLE) {
+			for (let key in nodeData) {
+				if (typeof nodeData[key] == 'object' && 'type' in nodeData[key]) {
+					nodeData[key] = SDFNodeLoader.fromDataObject(nodeData[key]);
+				}
+				else if (typeof nodeData[key] != 'string' && typeof nodeData[key] != 'object') {
+					nodeData[key] = new ConstantNode(nodeData[key]);
+				}
+			}
 			return NODE_TABLE[nodeData['type']](nodeData);
 		}
 	}

@@ -1,4 +1,4 @@
-import {GLSLFunctionSet, GLSLFunction} from "../../util/glsl";
+import {GLSLFunction} from "../../util/glsl";
 
 /* stores the data needed to create a shader node */
 export type ShaderNodeData = { [key: string] : any };
@@ -18,12 +18,12 @@ export abstract class ShaderNode {
 	 * they must have a create method
 	 */
 	//public static abstract create(nodeData: ShaderNodeData): ShaderNode;
-	
+
 	/*
 	 * Converts this shader node to GLSL code
 	 *
-	 * @return - the set of functions needed by this SDF code
+	 * @return - this shader function
 	 */
-	public abstract compile(): GLSLFunctionSet;
+	public abstract compile(): GLSLFunction;
 
 }

@@ -32,7 +32,7 @@ uniform vec3 u_camera_pos;
 struct ObjectID {
 	int modelId;  // the id of the model this object is an instance of
 	int objectId; // the unique identifier for this object
-}
+};
 
 /*
  * A 3D Ray
@@ -87,9 +87,9 @@ Distance min_d(Distance a, Distance b) {
  *
  * @return - the shortest distance to the surface of specified model base
  */
-Distance scene_sdf(int modelId, vec3 p) {
+float scene_sdf(int modelId, vec3 p) {
 	%%scene_sdf_branching_code%%
-	return Distance(-1, 0.0);
+	return -1.0; // Invalid modelId
 }
 
 /*
@@ -104,11 +104,11 @@ Distance scene_sdf(int modelId, vec3 p) {
  */
 vec3 calc_normal(int modelId, vec3 p) {
 	float h = 0.001;
-	float d = scene_sdf(modelId, p).d;
+	float d = scene_sdf(modelId, p);
 	return normalize(vec3(
-			(d - scene_sdf(modelId, p+vec3(h, 0, 0)).d) / h,
-			(d - scene_sdf(modelId, p+vec3(0, h, 0)).d) / h,
-			(d - scene_sdf(modelId, p+vec3(0, 0, h)).d) / h
+			(d - scene_sdf(modelId, p+vec3(h, 0, 0))) / h,
+			(d - scene_sdf(modelId, p+vec3(0, h, 0))) / h,
+			(d - scene_sdf(modelId, p+vec3(0, 0, h))) / h
 		));
 }
 
@@ -125,9 +125,9 @@ vec3 calc_normal(int modelId, vec3 p) {
 Intersection march(Ray r) {
 	vec3 p = r.o;
 	for (int i = 0; i < %%max_marching_steps%%; i++) {
-		Distance d = Distance(-1, 10e20);
+		Distance d = Distance(ObjectID(-1, -1), 10e20);
 		for (int id = 0; id < 1; id++) {
-			d = min_d(d, scene_sdf(id, p));
+			d = min_d(d, Distance(ObjectID(0, 0), scene_sdf(id, p)));
 		}
 		
 		if (d.d < %%epsilon%%) {
@@ -136,7 +136,7 @@ Intersection march(Ray r) {
 		
 		p += r.d*d.d;
 	}
-	return Intersection(NO_OBJECT_FOUND, vec3(0));
+	return Intersection(ObjectID(-1, NO_OBJECT_FOUND), vec3(0));
 }
 
 /*
@@ -165,14 +165,14 @@ void main() {
 	vec2 uv = gl_FragCoord.xy / 800.0;
 	Ray r = Ray(camera_pos, normalize(vec3(uv, 0) - camera_pos));
 	Intersection i = march(r);
-	if (i.id == NO_OBJECT_FOUND) {
+	if (i.id.objectId == NO_OBJECT_FOUND) {
 		gl_FragColor = vec4(0, 0, 0, 1);
 	}
 	else {
 		vec3 light_pos = camera_pos;
 		vec3 light_dir = normalize(i.p - light_pos);
-		vec3 normal = calc_normal(i.id, i.p);
-		vec3 c = shade(i.id, i.p, normal, light_dir);
+		vec3 normal = calc_normal(i.id.modelId, i.p);
+		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
 		gl_FragColor = vec4(c, 1);
 	}
 }

@@ -24,8 +24,8 @@ export abstract class SDFNode {
 	/*
 	 * Converts this SDF node to GLSL code
 	 *
-	 * @return - the set of functions needed by this SDF node
+	 * @return - the SDF function
 	 */
-	public abstract compile(): GLSLFunctionSet;
+	public abstract compile(): GLSLFunction;
 
 }

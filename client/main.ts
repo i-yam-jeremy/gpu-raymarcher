@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	graphics.bind(scene);
 
-	scene.add(new RenderableObject(new Model(SDF.fromJSON('{"type": "sphere", "radius": 0.1}'), Shader.fromJSON(`
+	scene.add(new RenderableObject(new Model(SDF.fromJSON('{"type": "sphere", "radius": 0.5}'), Shader.fromJSON(`
 		{
 			"type": "lambert",
 			"ambient": {
@@ -19,8 +19,16 @@ document.addEventListener("DOMContentLoaded", () => {
 			"diffuse": {
 				"color": [1, 0, 0], 
 				"amount": 0.8
+			},
+			"normal": {
+				"type": "special-input",
+				"name": "normal"
+			},
+			"light_dir": {
+				"type": "special-input",
+				"name": "light_dir"
 			}
-		}`))));
+		}`)), (dt) => {}));
 
 	graphics.start();
 });

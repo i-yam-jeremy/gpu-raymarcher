@@ -55,14 +55,14 @@ export class GLSLVec3 extends GLSLVec {
  */
 export class GLSLFunction {
 
+	/* the type of this function */
+	readonly fType: GLSLFunctionType;
 	/* the return type */
 	readonly returnType: string;
 	/*
-	 * the parameters of this function with their types included
-	 * 
-	 * example: ["vec3 p", "float a", "int b"]
+	 * The dependencies/inputs to this GLSL function
 	 */
-	readonly params: string[];
+	readonly dependencies: { [name: string] : GLSLFunction};
 	/*
 	 * the source / body of this function
 	 */
@@ -71,14 +71,16 @@ export class GLSLFunction {
 	/*
 	 * Creates a GLSLFunction
 	 *
+	 * @param fType - the type of this function
 	 * @param returnType - the return type
 	 * @param params - the params with their types included
 	 * @param source - the source / body of the function
 	 *
 	 */
-	constructor(returnType: string, params: string[], source: string) {
+	constructor(fType: GLSLFunctionType, returnType: string, dependencies: { [name: string] : GLSLFunction }, source: string) {
+		this.fType = fType;
 		this.returnType = returnType;
-		this.params = params;
+		this.dependencies = dependencies;
 		this.source = source;
 	}
 
@@ -90,10 +92,24 @@ export class GLSLFunction {
 	 * @return - GLSL source
 	 */
 	public compile(name: string): string {
-		return this.returnType + " " + name + "(" + this.params.join(", ") + ") {\n" + this.source + "\n}\n";
+		const dependencySource = Object.keys(this.dependencies).map(dependencyName => {
+			return this.dependencies[dependencyName].compile(name + "_" + dependencyName);
+		}).join("\n");
+		var paramString = (this.fType == GLSLFunctionType.SHADER) ? "(vec3 p, vec3 normal, vec3 light_dir)" : "(vec3 p)";
+		var callDependencyArgsString = (this.fType == GLSLFunctionType.SHADER) ? "(p, normal, light_dir)" : "(p)";
+		var functionSource = this.returnType + " " + name + paramString + " {\n" + this.source + "\n}\n";
+		Object.keys(this.dependencies).forEach(dependencyName => {
+			functionSource = functionSource.replace(new RegExp("\\$\\$" + dependencyName + "\\$\\$", "g"), name + "_" + dependencyName + callDependencyArgsString); // FIXME (this is a bug if the dependency name has any special regex characters because it will match other things too (if restricted to alphanumeric and underscore it should be fine)
+		});
+		return dependencySource + "\n" + functionSource;
 	}
 
 }
+
+/*
+ * The type of a GLSLFunction
+ */
+export enum GLSLFunctionType { SDF, SHADER };
 
 /*
  * A type for collections of GLSL functions
@@ -184,7 +200,7 @@ function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
 	function generateBranches(startId: number, endId: number): string {
 		if (startId+1 == endId) {
-			return "if (modelId == " + startId + ") { return Distance(" + startId + ", " + getModelFunctionName('sdf', startId) + "(p)); }\n";
+			return "if (modelId == " + startId + ") { return " + getModelFunctionName('sdf', startId) + "(p); }\n";
 		}
 		else {
 			var midpoint = (startId + endId) / 2;

@@ -9,7 +9,7 @@ export class RenderableObject {
 	/* the model this object is based on */
 	private model: Model;
 	/* called every tick */
-	private tick: TickCallback;
+	readonly tick: TickCallback;
 	/* the transformations applied to this object */
 	//TODO private transform: Transform; // includes scale, translation, rotation
 
