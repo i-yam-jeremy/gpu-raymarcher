@@ -9,16 +9,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	graphics.bind(scene);
 
-	scene.add(new RenderableObject(new Model(SDF.fromJSON('{"type": "sphere", "radius": 0.5}'), Shader.fromJSON(`
+	scene.add(new RenderableObject(new Model(SDF.fromJSON(`
+	{
+		"type": "sphere",
+		"radius": {
+			"type": "custom",
+			"dependencies": {
+				"time": {
+					"type": "special-input",
+					"name": "u_time"
+				}
+			},
+			"return-type": "float",
+			"source": "return 0.5 + 0.2*sin(3.0*$$time$$);"
+		}
+	}`
+	), Shader.fromJSON(`
 		{
 			"type": "lambert",
 			"ambient": {
 				"color": [1, 0, 0], 
-				"amount": 0.2
+				"amount": {
+					"type": "custom",
+					"dependencies": {
+						"time": {
+							"type": "special-input",
+							"name": "u_time"
+						}
+					},
+					"return-type": "float",
+					"source": "return 0.2 + 0.1*sin(2.0*$$time$$);"
+				}
 			},
 			"diffuse": {
 				"color": [1, 0, 0], 
-				"amount": 0.8
+				"amount": {
+					"type": "custom",
+					"dependencies": {
+						"time": {
+							"type": "special-input",
+							"name": "u_time"
+						}
+					},
+					"return-type": "float",
+					"source": "return 0.8 + 0.4*sin(2.0*$$time$$);"
+				}
 			},
 			"normal": {
 				"type": "special-input",

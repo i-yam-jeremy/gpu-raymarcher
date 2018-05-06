@@ -1,4 +1,4 @@
-import {ShaderNode, ShaderNodeData} from "../shader-node";
+import {SDFNode, SDFNodeData} from "../sdf-node";
 import {GLSLFunction, GLSLFunctionType} from "../../../util/glsl";
 
 /*
@@ -8,15 +8,13 @@ import {GLSLFunction, GLSLFunctionType} from "../../../util/glsl";
  */
 const SPECIAL_NAME_TYPES = {
 	"p": "vec3",
-	"light_dir": "vec3",
-	"normal": "vec3",
 	"u_time": "float"
 };
 
 /*
  * A shader node for getting the value of special inputs (such as normal, light_dir, etc.)
  */
-export class SpecialInput extends ShaderNode {
+export class SpecialInput extends SDFNode {
 
 	private name: string;
 
@@ -47,7 +45,7 @@ export class SpecialInput extends ShaderNode {
 	 *
 	 * @return - a special input node
 	 */
-	public static create(nodeData: ShaderNodeData): SpecialInput {
+	public static create(nodeData: SDFNodeData): SpecialInput {
 		return new SpecialInput(nodeData.name);
 	}
 
@@ -58,7 +56,7 @@ export class SpecialInput extends ShaderNode {
 	 *
 	 */
 	public compile(): GLSLFunction {
-		return new GLSLFunction(GLSLFunctionType.SHADER, SPECIAL_NAME_TYPES[this.name], {}, 'return ' + this.name + ';');
+		return new GLSLFunction(GLSLFunctionType.SDF, SPECIAL_NAME_TYPES[this.name], {}, 'return ' + this.name + ';');
 	}
 
 }
