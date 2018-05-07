@@ -52,7 +52,7 @@ export class Sphere extends SDFNode {
 				"p": this.p.compile(),
 				"radius": this.radius.compile()
 			}, 
-			'return length($$p$$) - float($$radius$$);'
+			'return length($$p$$) - $$radius$$;'
 		);
 	}
 
