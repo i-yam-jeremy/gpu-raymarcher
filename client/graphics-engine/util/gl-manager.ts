@@ -44,6 +44,8 @@ export class GLManager {
 	private uTime: WebGLUniformLocation;
 	/* the camera pos uniform location */
 	private uCameraPos: WebGLUniformLocation;
+	/* the screen width and height uniform location */
+	private uResolution: WebGLUniformLocation;
 	/* the time in milliseconds of the start of the last frame rendered */
 	private lastFrameTime: number;
 	/* the total number of seconds this has been running */
@@ -101,7 +103,7 @@ export class GLManager {
 		
 		this.uTime = gl.getUniformLocation(program, "u_time");
 		this.uCameraPos = gl.getUniformLocation(program, "u_camera_pos");
-
+		this.uResolution = gl.getUniformLocation(program, "u_resolution");
 		
 	}
 
@@ -114,6 +116,7 @@ export class GLManager {
 
 		gl.uniform3fv(this.uCameraPos, [0, 0, 0]);
 		gl.uniform1f(this.uTime, this.time);
+		gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height); //FIXME make this more efficient because DOM is slow
 	}
 
 	/*

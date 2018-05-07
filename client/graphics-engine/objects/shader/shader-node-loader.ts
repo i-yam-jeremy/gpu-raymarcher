@@ -2,6 +2,7 @@ import {ShaderNode, ShaderNodeData} from "./shader-node";
 
 import {ConstantNode} from "./basic/constant";
 import {Lambert} from "./basic/lambert";
+import {Phong} from "./basic/phong";
 import {SpecialInput} from "./basic/special-input";
 import {Custom} from "./basic/custom";
 
@@ -11,6 +12,7 @@ type ShaderNodeCreator = (nodeData: ShaderNodeData) => ShaderNode;
 /* the table mapping node names to their respective creator function */
 const NODE_TABLE: { [nodeName: string] : ShaderNodeCreator } = {
 	"lambert": Lambert.create,
+	"phong": Phong.create,
 	"special-input": SpecialInput.create,
 	"custom": Custom.create
 };

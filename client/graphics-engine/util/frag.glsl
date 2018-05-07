@@ -19,6 +19,8 @@ precision highp float;
 uniform float u_time;
 /* the position of the camera */
 uniform vec3 u_camera_pos;
+/* the screen width and height */
+uniform vec2 u_resolution;
 
 /* 
  * used for when the max number of raymarching steps is reached
@@ -161,16 +163,16 @@ vec3 shade(int modelId, vec3 p, vec3 normal, vec3 light_dir) {
  * The shader main function. Raymarches, finds the intersection point, and shades the object
  */
 void main() {
-	vec3 camera_pos = vec3(0, 0, -3.0);
-	vec2 uv = gl_FragCoord.xy / 800.0;
+	vec3 camera_pos = u_camera_pos + vec3(0, 0, -3.0);
+	vec2 uv = (2.0*gl_FragCoord.xy - u_resolution.xy) / u_resolution.y;
 	Ray r = Ray(camera_pos, normalize(vec3(uv, 0) - camera_pos));
 	Intersection i = march(r);
 	if (i.id.objectId == NO_OBJECT_FOUND) {
 		gl_FragColor = vec4(0, 0, 0, 1);
 	}
 	else {
-		vec3 light_pos = camera_pos;
-		vec3 light_dir = normalize(i.p - light_pos);
+		vec3 light_pos = vec3(0, 0, -2);
+		vec3 light_dir = normalize(light_pos - i.p);
 		vec3 normal = calc_normal(i.id.modelId, i.p);
 		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
 		gl_FragColor = vec4(c, 1);

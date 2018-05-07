@@ -2,10 +2,10 @@ import {ShaderNode, ShaderNodeData} from "../shader-node";
 import {GLSLFunction, GLSLFunctionType} from "../../../util/glsl";
 
 /*
- * Shader for Lambertian reflectance
- * Shading has a ambient and diffuse component
+ * Shader for Phong reflectance
+ * Shading has a ambient, diffuse, and specular component
  */
-export class Lambert extends ShaderNode {
+export class Phong extends ShaderNode {
 
 	/* the amount of ambient reflectance */
 	private ambientAmount: ShaderNode;
@@ -15,10 +15,14 @@ export class Lambert extends ShaderNode {
 	private diffuseAmount: ShaderNode;
 	/* the color of diffuse reflectance */
 	private diffuseColor: ShaderNode;
+	/* the specular power */
+	private specularPower: ShaderNode;
 	/* the surface normal of the model at the point to be shaded */
 	private normal: ShaderNode;
-	/* the direction of incoming light towards the point to be shaded */
+	/* the direction pointing towards the light from the point to be shaded */
 	private lightDir: ShaderNode;
+	/* the view direction from the camera to the point on the object surface to be shaded */
+	private viewDir: ShaderNode;
 
 	/*
 	 * Creates a Lambert shader with the specified fields
@@ -28,27 +32,29 @@ export class Lambert extends ShaderNode {
 	 * @param diffuseAmount - the color of diffuse reflectance
 	 * @param diffuseColor - the color of diffuse reflectance
 	 * @param normal - the surface normal of the model at the point to be shaded
-	 * @param light_dir - the incoming light direction
-	 *
+	 * @param lightDir - the incoming light direction
+	 * @param viewDir - the view direction from the camera
 	 */
-	constructor(ambientAmount: ShaderNode, ambientColor: ShaderNode, diffuseAmount: ShaderNode, diffuseColor: ShaderNode, normal: ShaderNode, lightDir: ShaderNode) {
+	constructor(ambientAmount: ShaderNode, ambientColor: ShaderNode, diffuseAmount: ShaderNode, diffuseColor: ShaderNode, specularPower: ShaderNode, normal: ShaderNode, lightDir: ShaderNode, viewDir: ShaderNode) {
 		super();
 		this.ambientAmount = ambientAmount;
 		this.ambientColor = ambientColor;
 		this.diffuseAmount = diffuseAmount;
 		this.diffuseColor = diffuseColor;
+		this.specularPower = specularPower;
 		this.normal = normal;
 		this.lightDir = lightDir;
+		this.viewDir = viewDir;
 	}
 
 	/*
-	 * Creates a Lambert shader from the specified node data
+	 * Creates a Phong shader from the specified node data
 	 *
 	 * @param nodeData - the node data
 	 *
 	 * Node Data Format:
 	 * {
-	 * 	"type": "lambert",
+	 * 	"type": "phong",
 	 * 	"ambient": {
 	 *		"amount": <number>,
 	 *		"color": <vec3>
@@ -57,20 +63,24 @@ export class Lambert extends ShaderNode {
 	 *		"amount": <number>,
 	 *		"color": <vec3>
 	 * 	},
+	 * 	"specular": <number>,
 	 * 	"normal": <vec3>,
-	 * 	"light_dir": <vec3>
+	 * 	"light-dir": <vec3>,
+	 * 	"view-dir": <vec3>
 	 * }
 	 *
-	 * @return - a Lambert shader
+	 * @return - a Phong shader
 	 */
-	public static create(nodeData: ShaderNodeData): Lambert {
-		return new Lambert(
+	public static create(nodeData: ShaderNodeData): Phong {
+		return new Phong(
 			nodeData.ambient.amount,
 			nodeData.ambient.color,
 			nodeData.diffuse.amount,
 			nodeData.diffuse.color,
+			nodeData.specular,
 			nodeData.normal,
-			nodeData.light_dir
+			nodeData['light-dir'],
+			nodeData['view-dir']
 		);
 	}
 
@@ -87,15 +97,21 @@ export class Lambert extends ShaderNode {
 				"ambient_color": this.ambientColor.compile(),
 				"diffuse_amount": this.diffuseAmount.compile(),
 				"diffuse_color": this.diffuseColor.compile(),
+				"specular": this.specularPower.compile(),
 				"normal": this.normal.compile(),
-				"light_dir": this.lightDir.compile()
+				"light_dir": this.lightDir.compile(),
+				"view_dir": this.viewDir.compile()
 			},
 		`
-				float ambient_amount = float($$ambient_amount$$);
-				vec3 ambient_color = $$ambient_color$$;
-				float diffuse_amount = float($$diffuse_amount$$);
-				vec3 diffuse_color = $$diffuse_color$$;
-				return ambient_amount*ambient_color + diffuse_amount*diffuse_color*max(0.0, dot($$normal$$, -$$light_dir$$));
+				vec3 ambient = $$ambient_amount$$*$$ambient_color$$;
+				vec3 diffuse = $$diffuse_amount$$*$$diffuse_color$$*max(0.0, dot($$normal$$, -$$light_dir$$));
+				vec3 specular = dot($$normal$$, $$light_dir$$) < 0.0 ?
+					/*TODO $$light_color*/vec3(1)*pow(
+						max(0.0, dot(reflect(-$$light_dir$$, $$normal$$), $$view_dir$$)),
+						$$specular$$
+					):
+					vec3(0);
+				return ambient + diffuse + specular;
 		`);
 	}
 
