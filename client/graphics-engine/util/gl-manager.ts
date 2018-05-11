@@ -27,14 +27,14 @@ class ShaderCompilationError extends Error {
  */
 export class GLManager {
 
-	/* the WebGLRenderingContext this GLManager is managing */
-	private gl: WebGLRenderingContext;
+	/* the WebGL2RenderingContext this GLManager is managing */
+	private gl: WebGL2RenderingContext;
 	/* the current program */
-	private program: WebGLProgram;
+	private program: WebGLProgram = null;
 	/* the current vertex shader */
-	private vertexShader: WebGLShader;
+	private vertexShader: WebGLShader = null;
 	/* the current fragment shader */
-	private fragmentShader: WebGLShader;
+	private fragmentShader: WebGLShader = null;
 	/* the vertex buffer for drawing the 2d screen-filling object that is shaded
 	 * to display pixels to the screen using the fragment shader */
 	private vertexBuffer: WebGLBuffer;
@@ -46,20 +46,64 @@ export class GLManager {
 	private uCameraPos: WebGLUniformLocation;
 	/* the screen width and height uniform location */
 	private uResolution: WebGLUniformLocation;
+	/* the uniform location for the texture containing object data */
+	private uObjectData: WebGLUniformLocation;
+	/* the uniform location for the side length of the object data texture */
+	private uObjectDataSideLength: WebGLUniformLocation;
+	/* the uniform location for the count of objects in the scene */
+	private uObjectCount: WebGLUniformLocation;
+	/* object data texture */
+	private objectDataTexture: WebGLTexture;
 	/* the time in milliseconds of the start of the last frame rendered */
 	private lastFrameTime: number;
 	/* the total number of seconds this has been running */
 	private time: number;
 
 	/*
-	 * @param gl - manages the given WebGLRenderingContext
+	 * @param gl - manages the given WebGL2RenderingContext
 	 */
-	constructor(gl: WebGLRenderingContext) {
-		this.gl = gl;
+	constructor(gl: WebGL2RenderingContext) {
+		this.gl = gl
 		this.updateShaders([]);
 		this.vertexBuffer = this.createVertexBuffer();
 		this.time = 0;
 		this.lastFrameTime = Date.now();
+		this.objectDataTexture = gl.createTexture();
+		this.updateObjectData([], []);
+	}
+
+	/*
+	 * Updates the data to be passed to the GPU/fragment shader that is stored in textures
+	 * (objects data such as transformation matrix, etc.) 
+	 *
+	 * @param objects - the objects to put into the texture
+	 * @param uniqueModels - the models used by the objects with no duplicates
+	 */
+	public updateObjectData(objects: RenderableObject[], uniqueModels: Model[]): void {
+		var gl = this.gl;
+
+		//TODO may need to delete and recreate texture if it cannot be resized. But if it CAN be resized with texImage2D just do that instead
+		// BASED ON THE TEST BELOW IT LOOKS LIKE YOU CAN REUSE TEXTURES SO I WON'T NEED TO DELETE THEM (once the data packing on CPU and unpacking on GPU is implemented I will test to make sure it still works for resizing)
+
+		var dataSize = objects.length * RenderableObject.SIZE_IN_FLOATS;
+		var sideLength = Math.pow(2, Math.ceil(Math.log(Math.sqrt(dataSize/4))/Math.LOG2E));
+		var buffer = new Float32Array(4*sideLength*sideLength);
+
+		gl.uniform1i(this.uObjectDataSideLength, sideLength);
+		gl.uniform1i(this.uObjectCount, objects.length);
+
+		for (let i = 0; i < objects.length; i++) {
+			var dst = new Float32Array(buffer.buffer, i*RenderableObject.SIZE_IN_BYTES, RenderableObject.SIZE_IN_FLOATS);
+			objects[i].toFloatData(dst, uniqueModels.indexOf(objects[i].getModel()));
+		}
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.objectDataTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, sideLength, sideLength, 0, gl.RGBA, gl.FLOAT, buffer);
+		gl.uniform1i(this.uObjectData, 0);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+
 	}
 
 	/*
@@ -70,6 +114,16 @@ export class GLManager {
 	public updateShaders(models: Model[]): void {
 		var gl = this.gl;
 
+		if (this.program) {
+			gl.deleteProgram(this.program);
+		}
+		if (this.vertexShader) {
+			gl.deleteShader(this.vertexShader);
+		}
+		if (this.fragmentShader) {
+			gl.deleteShader(this.fragmentShader);
+		}
+		
 		this.program = this.gl.createProgram();
 
 		this.vertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
@@ -104,7 +158,10 @@ export class GLManager {
 		this.uTime = gl.getUniformLocation(program, "u_time");
 		this.uCameraPos = gl.getUniformLocation(program, "u_camera_pos");
 		this.uResolution = gl.getUniformLocation(program, "u_resolution");
-		
+
+		this.uObjectData = gl.getUniformLocation(program, "u_object_data");
+		this.uObjectDataSideLength = gl.getUniformLocation(program, "u_object_data_side_length");
+		this.uObjectCount = gl.getUniformLocation(program, "u_object_count");
 	}
 
 	/*
@@ -121,17 +178,21 @@ export class GLManager {
 
 	/*
 	 * Render one frame using the fragment shader
+	 *
+	 * @param objects - the objects to render
+	 * @param uniqueModels - the models used by the objects with no duplicates
 	 */
-	public render(): void {
+	public render(objects: RenderableObject[], uniqueModels: Model[]): void {
 		this.time += (Date.now() - this.lastFrameTime) / 1000;
 		this.lastFrameTime = Date.now();
-		
+
 		var gl = this.gl;
 
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // TODO make this more efficient by not using gl.canvas to get width and height
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		gl.useProgram(this.program);
+		this.updateObjectData(objects, uniqueModels);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
 		gl.vertexAttribPointer(this.vertexAttrib, 2, gl.FLOAT, false, 0, 0);
 

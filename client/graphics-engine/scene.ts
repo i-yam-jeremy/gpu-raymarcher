@@ -25,10 +25,10 @@ export class Scene {
 	 * Important: to be called by GraphicsEngine only.
 	 * Initializes the scene with the given WebGLRenderingContext
 	 *
-	 * @param gl - the WebGLRenderingContext to be used for this scene
+	 * @param gl - the WebGL2RenderingContext to be used for this scene
 	 *
 	 */
-	public init(gl: WebGLRenderingContext): void {
+	public init(gl: WebGL2RenderingContext): void {
 		this.glManager = new GLManager(gl);	
 	}
 
@@ -72,6 +72,6 @@ export class Scene {
 	 * Called every frame
 	 */
 	public render(): void {
-		this.glManager.render();
+		this.glManager.render(this.objects, this.uniqueModels);
 	}
 }

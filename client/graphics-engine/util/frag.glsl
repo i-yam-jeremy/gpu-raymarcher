@@ -21,6 +21,12 @@ uniform float u_time;
 uniform vec3 u_camera_pos;
 /* the screen width and height */
 uniform vec2 u_resolution;
+/* the object data texture */
+uniform sampler2D u_object_data;
+/* object data texture side length in pixels */
+uniform int u_object_data_side_length;
+/* the number of objects in the scene */
+uniform int u_object_count;
 
 /* 
  * used for when the max number of raymarching steps is reached
@@ -114,6 +120,10 @@ vec3 calc_normal(int modelId, vec3 p) {
 		));
 }
 
+int imod(int n, int m) {
+	return n - m*(n/m);
+}
+
 /*
  * Raymarches along the given ray, starting at the rays origin until it
  * intersects with an object or it reaches the max number of raymarching steps
@@ -128,8 +138,24 @@ Intersection march(Ray r) {
 	vec3 p = r.o;
 	for (int i = 0; i < %%max_marching_steps%%; i++) {
 		Distance d = Distance(ObjectID(-1, -1), 10e20);
-		for (int id = 0; id < 1; id++) {
-			d = min_d(d, Distance(ObjectID(0, 0), scene_sdf(id, p)));
+		for (int obj = 0; obj < 100000; obj++) {
+			if (!(obj < u_object_count)) {
+				break;
+			}
+			vec4 data = texture2D(u_object_data, vec2(imod(obj/4, u_object_data_side_length), obj/4 / u_object_data_side_length) / float(u_object_data_side_length));
+			float value;
+			/*int channel = imod(obj, 4);
+			if (channel == 0)
+				value = data.r;
+			else if (channel == 1)
+				value = data.g;
+			else if (channel == 2)
+				value = data.b;
+			else if (channel == 3)
+				value = data.a;*/
+			value = length(data);
+			int modelId = int(value);
+			d = min_d(d, Distance(ObjectID(modelId, obj), scene_sdf(modelId, p)));
 		}
 		
 		if (d.d < %%epsilon%%) {
@@ -177,4 +203,5 @@ void main() {
 		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
 		gl_FragColor = vec4(c, 1);
 	}
+	gl_FragColor = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
 }
