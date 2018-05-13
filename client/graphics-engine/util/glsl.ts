@@ -203,7 +203,12 @@ function generateSceneSDFGLSLBranchingCode(modelCount: number) {
 	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
 	function generateBranches(startId: number, endId: number): string {
 		if (startId+1 == endId) {
-			return "if (modelId == " + startId + ") { return " + getModelFunctionName('sdf', startId) + "(p); }\n";
+			if (startId < modelCount) {
+				return "if (modelId == " + startId + ") { return " + getModelFunctionName('sdf', startId) + "(p); }\n";
+			}
+			else {
+				return "";
+			}
 		}
 		else {
 			var midpoint = (startId + endId) / 2;
@@ -231,7 +236,12 @@ function generateModelShaderGLSLBranchingCode(modelCount: number) {
 	var nearestLargerPowerOfTwoModelCount = Math.pow(2, Math.ceil(Math.log(modelCount)/Math.LN2));
 	function generateBranches(startId: number, endId: number): string {
 		if (startId+1 == endId) {
-			return "if (modelId == " + startId + ") { return " + getModelFunctionName('shade', startId) + "(p, normal, light_dir); }\n";
+			if (startId < modelCount) {
+				return "if (modelId == " + startId + ") { return " + getModelFunctionName('shade', startId) + "(p, normal, light_dir); }\n";
+			}
+			else {
+				return "";
+			}
 		}
 		else {
 			var midpoint = (startId + endId) / 2;
