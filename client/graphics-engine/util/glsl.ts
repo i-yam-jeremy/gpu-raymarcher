@@ -141,7 +141,8 @@ const FRAGMENT_SHADER_SOURCE_TEMPLATE = FileBundle.asString('graphics-engine/uti
  */
 const DEFAULT_PARAMS = {
 	"max_marching_steps": 64,
-	"epsilon": 0.01
+	"epsilon": 0.01,
+	"max_render_distance": 100
 };
 
 /*

@@ -162,6 +162,9 @@ Intersection march(Ray r) {
 		}
 		
 		p += r.d*d.d;
+		if (length(p - r.o) > float(%%max_render_distance%%)) {
+			break;
+		}
 	}
 	return Intersection(ObjectID(-1, NO_OBJECT_FOUND), vec3(0));
 }
