@@ -166,7 +166,10 @@ function transpileFragmentShaderSource(params: { [ name: string ] : any }): stri
 	var paramsWithDefaults = (<any>Object).assign({}, DEFAULT_PARAMS);
 	paramsWithDefaults = (<any>Object).assign(paramsWithDefaults, params);
 	for (let key in paramsWithDefaults) {
-		source = source.replace("%%" + key + "%%", "" + paramsWithDefaults[key]); // "" + params[key] is to convert the parameter values to strings if they are not already 
+		var searchString = "%%" + key + "%%";
+		while (source.indexOf(searchString) > -1) {
+			source = source.replace(searchString, "" + paramsWithDefaults[key]); // "" + params[key] is to convert the parameter values to strings if they are not already 
+		}	
 	}
 	/* 
 	 * This is done after the replacement of params so if parameters
@@ -271,6 +274,7 @@ export function generateFragmentShaderSource(models: Model[]): string {
 	});
 	return transpileFragmentShaderSource({
 		"model_source": modelSource,
+		"model_count": models.length,
 		"scene_sdf_branching_code": generateSceneSDFGLSLBranchingCode(models.length),
 		"model_shader_branching_code": generateModelShaderGLSLBranchingCode(models.length)
 	});

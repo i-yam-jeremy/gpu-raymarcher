@@ -128,6 +128,7 @@ class FPSTracker {
 			this.fps = this.framesSinceLastUpdate / secondsSinceLastUpdate;
 			this.framesSinceLastUpdate = 0;
 			this.lastUpdateTime = now;
+			console.log(this.fps);
 		}     
 	}
 

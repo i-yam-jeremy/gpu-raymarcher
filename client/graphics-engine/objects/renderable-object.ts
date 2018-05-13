@@ -37,8 +37,8 @@ export class RenderableObject {
 		return this.model;
 	}
 
-	public toFloatData(dst: Float32Array, modelId: number): void {
-		dst[0] = modelId;
+	public toFloatData(dst: Float32Array, modelId: number, modelCount: number): void {
+		dst[0] = modelId / modelCount;
 		//this.transform.toFloatData(new Float32Array(dst.buffer, Float32Array.BYTES_PER_ELEMENT, Transform.SIZE_IN_BYTES));
 	}
 

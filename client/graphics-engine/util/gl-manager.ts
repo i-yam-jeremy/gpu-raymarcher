@@ -94,14 +94,18 @@ export class GLManager {
 
 		for (let i = 0; i < objects.length; i++) {
 			var dst = new Float32Array(buffer.buffer, i*RenderableObject.SIZE_IN_BYTES, RenderableObject.SIZE_IN_FLOATS);
-			objects[i].toFloatData(dst, uniqueModels.indexOf(objects[i].getModel()));
+			objects[i].toFloatData(dst, uniqueModels.indexOf(objects[i].getModel()), uniqueModels.length);
 		}
-		
+
+		gl.deleteTexture(this.objectDataTexture);
+		this.objectDataTexture = gl.createTexture();
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.objectDataTexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, sideLength, sideLength, 0, gl.RGBA, gl.FLOAT, buffer);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.uniform1i(this.uObjectData, 0);
-		gl.bindTexture(gl.TEXTURE_2D, null);
+		//gl.bindTexture(gl.TEXTURE_2D, null);
 
 
 	}

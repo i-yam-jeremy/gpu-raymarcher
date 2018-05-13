@@ -144,7 +144,7 @@ Intersection march(Ray r) {
 			}
 			vec4 data = texture2D(u_object_data, vec2(imod(obj/4, u_object_data_side_length), obj/4 / u_object_data_side_length) / float(u_object_data_side_length));
 			float value;
-			/*int channel = imod(obj, 4);
+			int channel = imod(obj, 4);
 			if (channel == 0)
 				value = data.r;
 			else if (channel == 1)
@@ -152,9 +152,8 @@ Intersection march(Ray r) {
 			else if (channel == 2)
 				value = data.b;
 			else if (channel == 3)
-				value = data.a;*/
-			value = length(data);
-			int modelId = int(value);
+				value = data.a;
+			int modelId = int(value*float(%%model_count%%));
 			d = min_d(d, Distance(ObjectID(modelId, obj), scene_sdf(modelId, p)));
 		}
 		
@@ -191,6 +190,9 @@ vec3 shade(int modelId, vec3 p, vec3 normal, vec3 light_dir) {
 void main() {
 	vec3 camera_pos = u_camera_pos + vec3(0, 0, -3.0);
 	vec2 uv = (2.0*gl_FragCoord.xy - u_resolution.xy) / u_resolution.y;
+	
+	gl_FragColor = texture2D(u_object_data, vec2(0.5, 0.5))*float(%%model_count%%);
+	//return;
 	Ray r = Ray(camera_pos, normalize(vec3(uv, 0) - camera_pos));
 	Intersection i = march(r);
 	if (i.id.objectId == NO_OBJECT_FOUND) {
@@ -203,5 +205,6 @@ void main() {
 		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
 		gl_FragColor = vec4(c, 1);
 	}
-	gl_FragColor = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
+	//gl_FragColor = vec4(texture2D(u_object_data, uv).rgb, 1);
+	//gl_FragColor = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
 }
