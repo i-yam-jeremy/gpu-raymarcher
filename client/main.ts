@@ -185,6 +185,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	scene.add(new RenderableObject(new Model(SDF.fromJSON(`
 	{
+		"type": "plane",
+		"normal": [0, 0, -1],
+		"p": {
+			"type": "custom",
+			"dependencies": {
+				"p": {
+					"type": "special-input",
+					"name": "p"
+				}
+			},
+			"return-type": "vec3",
+			"source": "return $$p$$ - vec3(0, 0, 15);"
+		}
+	}
+	`), Shader.fromJSON(`
+	{
+		"type": "custom",
+		"dependencies": {},
+		"return-type": "vec3",
+		"source": "return vec3(1, 0, 1);"
+	}
+	`)), (dt) => {}));
+
+	for (var i = 0; i < 10; i++) {
+	scene.add(new RenderableObject(new Model(SDF.fromJSON(`
+	{
 		"type": "simple-distortion",
 		"distance": {
 			"type": "sphere",
@@ -212,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					}
 				},
 				"return-type": "vec3",
-				"source": "return $$p$$ - vec3(-2, -2, 10);"
+				"source": "return $$p$$ - vec3(` + -i*0.1 + `, -2, 10);"
 			}
 		},
 		"p": {
@@ -269,6 +295,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				"source": "return normalize(u_camera_pos-p);"
 			}
 		}`)), (dt) => {}));
+	}
+
 
 	graphics.start();
 });

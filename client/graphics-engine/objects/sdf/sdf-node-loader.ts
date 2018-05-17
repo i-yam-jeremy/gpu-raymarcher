@@ -2,6 +2,7 @@ import {SDFNode, SDFNodeData} from "./sdf-node";
 
 import {ConstantNode} from "./basic/constant";
 import {Sphere} from "./basic/sphere";
+import {Plane} from "./basic/plane";
 import {SpecialInput} from "./basic/special-input";
 import {Custom} from "./basic/custom";
 import {SimpleDistortion} from "./basic/simple-distortion";
@@ -14,7 +15,8 @@ const NODE_TABLE: { [nodeName: string] : SDFNodeCreator } = {
 	"sphere": Sphere.create,
 	"special-input": SpecialInput.create,
 	"custom": Custom.create,
-	"simple-distortion": SimpleDistortion.create
+	"simple-distortion": SimpleDistortion.create,
+	"plane": Plane.create
 };
 
 /*

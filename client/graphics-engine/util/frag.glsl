@@ -1,4 +1,8 @@
+#version 300 es
 precision highp float;
+
+layout(location = 0) out vec4 main_image_color;
+layout(location = 1) out vec4 depth_output;
 
 /*
  * Terms Used In This File
@@ -27,6 +31,11 @@ uniform sampler2D u_object_data;
 uniform int u_object_data_side_length;
 /* the number of objects in the scene */
 uniform int u_object_count;
+/* the depth texture width and height */
+uniform vec2 u_depth_texture_resolution;
+/* the depth from the previous frame */
+uniform sampler2D u_depth_texture;
+
 
 /* 
  * used for when the max number of raymarching steps is reached
@@ -142,17 +151,19 @@ Intersection march(Ray r) {
 			if (!(obj < u_object_count)) {
 				break;
 			}
-			vec4 data = texture2D(u_object_data, vec2(imod(obj/4, u_object_data_side_length), obj/4 / u_object_data_side_length) / float(u_object_data_side_length));
+			vec4 data = texture(u_object_data, vec2(imod(obj/4, u_object_data_side_length), obj/4 / u_object_data_side_length) / float(u_object_data_side_length));
 			float value;
 			int channel = imod(obj, 4);
-			if (channel == 0)
+			vec4 tmp = data.rgba * vec4(channel == 0, channel == 1, channel == 2, channel == 3);
+			value = tmp.r + tmp.g + tmp.b + tmp.a;
+			/*if (channel == 0)
 				value = data.r;
 			else if (channel == 1)
 				value = data.g;
 			else if (channel == 2)
 				value = data.b;
 			else if (channel == 3)
-				value = data.a;
+				value = data.a;*/
 			int modelId = int(value*float(%%model_count%%));
 			d = min_d(d, Distance(ObjectID(modelId, obj), scene_sdf(modelId, p)));
 		}
@@ -194,20 +205,22 @@ void main() {
 	vec3 camera_pos = u_camera_pos + vec3(0, 0, -3.0);
 	vec2 uv = (2.0*gl_FragCoord.xy - u_resolution.xy) / u_resolution.y;
 	
-	gl_FragColor = texture2D(u_object_data, vec2(0.5, 0.5))*float(%%model_count%%);
-	//return;
 	Ray r = Ray(camera_pos, normalize(vec3(uv, 0) - camera_pos));
+	float previous_depth = texture(u_depth_texture, gl_FragCoord.xy/u_depth_texture_resolution).r*float(%%max_render_distance%%);
+	r.o += r.d * previous_depth;
 	Intersection i = march(r);
+	depth_output = vec4(vec3(length(i.p - camera_pos) / float(%%max_render_distance%%)), 1);
 	if (i.id.objectId == NO_OBJECT_FOUND) {
-		gl_FragColor = vec4(0, 0, 0, 1);
+		main_image_color = vec4(0, 0, 0, 1);
 	}
 	else {
 		vec3 light_pos = vec3(0, 0, -2);
 		vec3 light_dir = normalize(light_pos - i.p);
 		vec3 normal = calc_normal(i.id.modelId, i.p);
 		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
-		gl_FragColor = vec4(c, 1);
+		main_image_color = vec4(c, 1);
 	}
-	//gl_FragColor = vec4(texture2D(u_object_data, uv).rgb, 1);
-	//gl_FragColor = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
+	//main_image_color = vec4(texture(u_depth_texture, gl_FragCoord.xy/u_depth_texture_resolution).rgb, 1);
+	//main_image_color = vec4(texture(u_object_data, uv).rgb, 1);
+	//main_image_color = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
 }

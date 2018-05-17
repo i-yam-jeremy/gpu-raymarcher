@@ -121,14 +121,15 @@ export type GLSLFunctionSet = { [funcname: string] : GLSLFunction};
  * GLSL vertex shader source
  */
 export const VERTEX_SHADER_SOURCE = `
+#version 300 es
 
-attribute vec2 pos;
+in vec2 pos;
 
 void main() {
 	gl_Position = vec4(pos, 0, 1);
 }
 
-`;
+`.trim();
 
 /*
  * The template for the fragment shader source. It contains syntactic sugar and
@@ -142,7 +143,7 @@ const FRAGMENT_SHADER_SOURCE_TEMPLATE = FileBundle.asString('graphics-engine/uti
 const DEFAULT_PARAMS = {
 	"max_marching_steps": 64,
 	"epsilon": 0.01,
-	"max_render_distance": 100
+	"max_render_distance": 1000
 };
 
 /*

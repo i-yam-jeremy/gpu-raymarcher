@@ -20,6 +20,22 @@ class ShaderCompilationError extends Error {
 
 }
 
+/* 
+ * Rounds the given number up to the nearest power of two
+ *
+ * @param n - the number to round
+ * 
+ * @return n rounded up to the nearest power of two
+ */
+function roundUpToNearestPowerOfTwo(n: number) {
+	return Math.pow(2, Math.ceil(Math.log(n)/Math.LN2));
+}
+
+/* the key in the render targets dictionary for the main image render target texture */
+const MAIN_IMAGE_RENDER_TARGET = 0;
+/* the key in the render targets dictionary for the depth render target texture */
+const DEPTH_RENDER_TARGET = 1;
+
 /*
  * Helps encapsulate WebGL functionality so other code doesn't have to deal with
  * the complexities of WebGL and the other code only has to deal with models, objects, and scenes
@@ -54,6 +70,24 @@ export class GLManager {
 	private uObjectCount: WebGLUniformLocation;
 	/* object data texture */
 	private objectDataTexture: WebGLTexture;
+
+	//TODO add comments
+	private uDepthTextureResolution: WebGLUniformLocation;
+	private uDepthTexture: WebGLUniformLocation;
+	private depthInputTexture: WebGLTexture;
+
+	/* the framebuffer used for multiple render targets */
+	private framebuffer: WebGLFramebuffer;
+	/* targets for rendering */
+	private renderTargets: { [key: number] : WebGLTexture };
+
+	// TODO add comments for post process stuff
+	private postProcessProgram: WebGLProgram;
+	private postProcessVertexShader: WebGLShader;
+	private postProcessFragmentShader: WebGLShader;
+	private postProcessVertexAttrib: AttribLocation;
+	private postProcessUniforms: { [name: string] : WebGLUniformLocation };
+	
 	/* the time in milliseconds of the start of the last frame rendered */
 	private lastFrameTime: number;
 	/* the total number of seconds this has been running */
@@ -63,13 +97,57 @@ export class GLManager {
 	 * @param gl - manages the given WebGL2RenderingContext
 	 */
 	constructor(gl: WebGL2RenderingContext) {
-		this.gl = gl
+		this.gl = gl;
+		this.depthInputTexture = this.updateTexture(null, 1, 1);
+		this.updateRenderTargets();
+		this.initPostProcess();
 		this.updateShaders([]);
 		this.vertexBuffer = this.createVertexBuffer();
 		this.time = 0;
 		this.lastFrameTime = Date.now();
 		this.objectDataTexture = gl.createTexture();
 		this.updateObjectData([], []);
+	}
+
+	/*
+	 * Updates a texture (deletes the previous texture and returns a new one with changed dimensions)
+	 *
+	 * @param oldTexutre - the old texture to delete
+	 * @param width - the new texture width
+	 * @param height - the new texture height
+	 *
+	 * @return the new texture
+	 */
+	private updateTexture(oldTexture: WebGLTexture, width: number, height: number) {
+		var gl = this.gl;
+
+		width = roundUpToNearestPowerOfTwo(width);
+		height = roundUpToNearestPowerOfTwo(height);
+
+		gl.deleteTexture(oldTexture);
+		var newTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, newTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4*width*height));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		return newTexture;
+	}
+
+	/*
+	 * Updates the render target textures and framebuffer
+	 * (initializes them if needed)
+	 */
+	private updateRenderTargets(): void {
+		var gl = this.gl;
+
+		this.renderTargets = this.renderTargets || {};
+		this.renderTargets[MAIN_IMAGE_RENDER_TARGET] = this.updateTexture(this.renderTargets[MAIN_IMAGE_RENDER_TARGET], gl.canvas.width, gl.canvas.height);
+		this.renderTargets[DEPTH_RENDER_TARGET] = this.updateTexture(this.renderTargets[DEPTH_RENDER_TARGET], gl.canvas.width, gl.canvas.height);
+		
+		this.framebuffer = this.framebuffer || gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.renderTargets[MAIN_IMAGE_RENDER_TARGET], 0);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.renderTargets[DEPTH_RENDER_TARGET], 0);
 	}
 
 	/*
@@ -128,7 +206,7 @@ export class GLManager {
 			gl.deleteShader(this.fragmentShader);
 		}
 		
-		this.program = this.gl.createProgram();
+		this.program = gl.createProgram();
 
 		this.vertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
 		this.fragmentShader = this.createShader(gl.FRAGMENT_SHADER, generateFragmentShaderSource(models));
@@ -166,6 +244,9 @@ export class GLManager {
 		this.uObjectData = gl.getUniformLocation(program, "u_object_data");
 		this.uObjectDataSideLength = gl.getUniformLocation(program, "u_object_data_side_length");
 		this.uObjectCount = gl.getUniformLocation(program, "u_object_count");
+
+		this.uDepthTextureResolution = gl.getUniformLocation(program, "u_depth_texture_resolution");
+		this.uDepthTexture = gl.getUniformLocation(program, "u_depth_texture");
 	}
 
 	/*
@@ -178,6 +259,11 @@ export class GLManager {
 		gl.uniform3fv(this.uCameraPos, [0, 0, 0]);
 		gl.uniform1f(this.uTime, this.time);
 		gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height); //FIXME make this more efficient because DOM is slow
+		
+		gl.uniform2f(this.uDepthTextureResolution, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height));
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, this.depthInputTexture);
+		gl.uniform1i(this.uDepthTexture, 1);
 	}
 
 	/*
@@ -195,6 +281,8 @@ export class GLManager {
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // TODO make this more efficient by not using gl.canvas to get width and height
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
+		this.updateRenderTargets();
+
 		gl.useProgram(this.program);
 		this.updateObjectData(objects, uniqueModels);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
@@ -202,6 +290,77 @@ export class GLManager {
 
 		this.setUniforms();
 
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
+		gl.drawBuffers([
+			gl.COLOR_ATTACHMENT0,
+			gl.COLOR_ATTACHMENT1
+		]);
+
+		this.doPostProcess();
+	}
+
+	private initPostProcess(): void {
+		var gl = this.gl;
+
+		this.postProcessProgram = gl.createProgram();
+
+		this.postProcessVertexShader = this.createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
+		this.postProcessFragmentShader = this.createShader(gl.FRAGMENT_SHADER, `
+			#version 300 es
+			precision highp float;
+
+			layout(location = 0) out vec4 color_out;
+
+			uniform sampler2D u_main_image;
+			uniform vec2 u_resolution;
+
+			void main() {
+				vec2 uv = (gl_FragCoord.xy) / u_resolution.xy;
+				color_out = texture(u_main_image, uv);
+			}
+		`.trim());
+
+		gl.attachShader(this.postProcessProgram, this.postProcessVertexShader);
+		gl.attachShader(this.postProcessProgram, this.postProcessFragmentShader);
+
+		gl.linkProgram(this.postProcessProgram);
+
+		var linkedSuccessfully = gl.getProgramParameter(this.postProcessProgram, gl.LINK_STATUS);
+
+		if (!linkedSuccessfully) {
+			alert("Couldn't link WebGLProgram");
+			console.error(gl.getProgramInfoLog(this.postProcessProgram));
+		}
+
+		this.postProcessVertexAttrib = gl.getAttribLocation(this.postProcessProgram, "pos");
+		gl.enableVertexAttribArray(this.postProcessVertexAttrib);	
+	
+		this.postProcessUniforms = {};
+		this.postProcessUniforms.uMainImage = gl.getUniformLocation(this.postProcessProgram, "u_main_image");
+		this.postProcessUniforms.uResolution = gl.getUniformLocation(this.postProcessProgram, "u_resolution");
+
+	}
+
+	private doPostProcess(): void {
+		var gl = this.gl;
+
+		this.depthInputTexture = this.updateTexture(this.depthInputTexture, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height));
+		gl.readBuffer(gl.COLOR_ATTACHMENT1);
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.depthInputTexture);
+		gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height), 0);
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		gl.useProgram(this.postProcessProgram);
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.renderTargets[MAIN_IMAGE_RENDER_TARGET]);
+		gl.uniform1i(this.postProcessUniforms.uMainImage, 0);
+
+		gl.uniform2f(this.postProcessUniforms.uResolution, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height));
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+		gl.vertexAttribPointer(this.postProcessVertexAttrib, 2, gl.FLOAT, false, 0, 0);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	}
 
