@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "noImplicitAny": true,
+        "strictNullChecks": false,
+        "types": [],
+        "forceConsistentCasingInFileNames": true,
+        "lib": ["ES2015", "ES2017.SharedMemory", "DOM"]
+    },
+    "files": [
+        "Misc.d.ts",
+        "WebGL2.d.ts"
+    ]
+}

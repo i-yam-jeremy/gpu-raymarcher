@@ -1,0 +1,11 @@
+# Transpiled JS files
+*.js
+
+# Mac
+*.DS_Store
+
+# Vim
+*.swp
+
+# Test temporary sources
+test_tmp/*

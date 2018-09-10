@@ -1,0 +1,11 @@
+{
+	"compileOptions": {
+		"target": "ES6",
+		"module": "CommonJS",
+		"rootDir": "./",
+		"removeComments": true
+	},
+	"include": [
+		"**/*"
+	]
+}

@@ -1,0 +1,12 @@
+{
+	"compileOptions": {
+		"target": "ES6",
+		"module": "CommonJS",
+		"rootDir": "./",
+		"removeComments": true,
+		"types": ["jasmine"]
+	},
+	"include": [
+		"**/*"
+	]
+}
