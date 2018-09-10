@@ -71,11 +71,6 @@ export class GLManager {
 	/* object data texture */
 	private objectDataTexture: WebGLTexture;
 
-	//TODO add comments
-	private uDepthTextureResolution: WebGLUniformLocation;
-	private uDepthTexture: WebGLUniformLocation;
-	private depthInputTexture: WebGLTexture;
-
 	/* the framebuffer used for multiple render targets */
 	private framebuffer: WebGLFramebuffer;
 	/* targets for rendering */
@@ -98,7 +93,6 @@ export class GLManager {
 	 */
 	constructor(gl: WebGL2RenderingContext) {
 		this.gl = gl;
-		this.depthInputTexture = this.updateTexture(null, 1, 1);
 		this.updateRenderTargets();
 		this.initPostProcess();
 		this.updateShaders([]);
@@ -244,9 +238,6 @@ export class GLManager {
 		this.uObjectData = gl.getUniformLocation(program, "u_object_data");
 		this.uObjectDataSideLength = gl.getUniformLocation(program, "u_object_data_side_length");
 		this.uObjectCount = gl.getUniformLocation(program, "u_object_count");
-
-		this.uDepthTextureResolution = gl.getUniformLocation(program, "u_depth_texture_resolution");
-		this.uDepthTexture = gl.getUniformLocation(program, "u_depth_texture");
 	}
 
 	/*
@@ -259,11 +250,6 @@ export class GLManager {
 		gl.uniform3fv(this.uCameraPos, [0, 0, 0]);
 		gl.uniform1f(this.uTime, this.time);
 		gl.uniform2f(this.uResolution, gl.canvas.width, gl.canvas.height); //FIXME make this more efficient because DOM is slow
-		
-		gl.uniform2f(this.uDepthTextureResolution, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height));
-		gl.activeTexture(gl.TEXTURE1);
-		gl.bindTexture(gl.TEXTURE_2D, this.depthInputTexture);
-		gl.uniform1i(this.uDepthTexture, 1);
 	}
 
 	/*
@@ -343,12 +329,6 @@ export class GLManager {
 
 	private doPostProcess(): void {
 		var gl = this.gl;
-
-		this.depthInputTexture = this.updateTexture(this.depthInputTexture, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height));
-		gl.readBuffer(gl.COLOR_ATTACHMENT1);
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, this.depthInputTexture);
-		gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, 0, roundUpToNearestPowerOfTwo(gl.canvas.width), roundUpToNearestPowerOfTwo(gl.canvas.height), 0);
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(this.postProcessProgram);

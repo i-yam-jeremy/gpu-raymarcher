@@ -31,10 +31,6 @@ uniform sampler2D u_object_data;
 uniform int u_object_data_side_length;
 /* the number of objects in the scene */
 uniform int u_object_count;
-/* the depth texture width and height */
-uniform vec2 u_depth_texture_resolution;
-/* the depth from the previous frame */
-uniform sampler2D u_depth_texture;
 
 
 /* 
@@ -206,10 +202,7 @@ void main() {
 	vec2 uv = (2.0*gl_FragCoord.xy - u_resolution.xy) / u_resolution.y;
 	
 	Ray r = Ray(camera_pos, normalize(vec3(uv, 0) - camera_pos));
-	float previous_depth = texture(u_depth_texture, gl_FragCoord.xy/u_depth_texture_resolution).r*float(%%max_render_distance%%);
-	r.o += r.d * previous_depth;
 	Intersection i = march(r);
-	depth_output = vec4(vec3(length(i.p - camera_pos) / float(%%max_render_distance%%)), 1);
 	if (i.id.objectId == NO_OBJECT_FOUND) {
 		main_image_color = vec4(0, 0, 0, 1);
 	}
