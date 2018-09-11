@@ -1,5 +1,5 @@
 import {Model} from "../objects";
-import {FileBundle} from "../../file-bundle";
+import {FRAGMENT_SHADER_SOURCE_TEMPLATE} from "./frag";
 
 /*
  * Contains data for GLSL vectors
@@ -130,12 +130,6 @@ void main() {
 }
 
 `.trim();
-
-/*
- * The template for the fragment shader source. It contains syntactic sugar and
- * parameters that will be replaced.
- */
-const FRAGMENT_SHADER_SOURCE_TEMPLATE = FileBundle.asString('graphics-engine/util/frag.glsl');
 
 /*
  * The default transpiler parameters

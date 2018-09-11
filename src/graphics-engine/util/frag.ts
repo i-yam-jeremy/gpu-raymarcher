@@ -1,4 +1,9 @@
-#version 300 es
+/*
+ * The template for the fragment shader source. It contains syntactic sugar and
+ * parameters that will be replaced.
+ */
+export const FRAGMENT_SHADER_SOURCE_TEMPLATE = 
+`#version 300 es
 precision highp float;
 
 layout(location = 0) out vec4 main_image_color;
@@ -213,7 +218,5 @@ void main() {
 		vec3 c = shade(i.id.modelId, i.p, normal, light_dir);
 		main_image_color = vec4(c, 1);
 	}
-	//main_image_color = vec4(texture(u_depth_texture, gl_FragCoord.xy/u_depth_texture_resolution).rgb, 1);
-	//main_image_color = vec4(texture(u_object_data, uv).rgb, 1);
-	//main_image_color = vec4(vec3(float(i.id.modelId+1)/2.0), 1);
 }
+`;
