@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		{
 			"type": "phong",
 			"ambient": {
-				"color": [1, 0, 0], 
+				"color": [0, 0.75, 0.75], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			},
 			"diffuse": {
-				"color": [1, 0, 0], 
+				"color": [0, 0.75, 0.75], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		{
 			"type": "phong",
 			"ambient": {
-				"color": [1, 0, 0], 
+				"color": [0.75, 0, 0], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			},
 			"diffuse": {
-				"color": [1, 0, 0], 
+				"color": [0.75, 0, 0], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -185,74 +185,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	scene.add(new RenderableObject(new Model(SDF.fromJSON(`
 	{
-		"type": "plane",
-		"normal": [0, 0, -1],
-		"p": {
-			"type": "custom",
-			"dependencies": {
-				"p": {
-					"type": "special-input",
-					"name": "p"
-				}
-			},
-			"return-type": "vec3",
-			"source": "return $$p$$ - vec3(0, 0, 15);"
-		}
-	}
-	`), Shader.fromJSON(`
-	{
-		"type": "custom",
-		"dependencies": {},
-		"return-type": "vec3",
-		"source": "return vec3(1, 0, 1);"
-	}
-	`)), (dt) => {}));
-
-	for (var i = 0; i < 10; i++) {
-	scene.add(new RenderableObject(new Model(SDF.fromJSON(`
-	{
-		"type": "simple-distortion",
+		"type": "simple-distortion",	
 		"distance": {
-			"type": "sphere",
-			"radius": {
-				"type": "custom",
-				"dependencies": {
-					"time": {
-						"type": "special-input",
-						"name": "u_time"
-					}
-				},
-				"return-type": "float",
-				"source": "return 0.5 + 0.2*sin(3.0*$$time$$);"
-			},
+			"type": "plane",
+			"normal": [0, 0, -1],
 			"p": {
 				"type": "custom",
 				"dependencies": {
 					"p": {
 						"type": "special-input",
 						"name": "p"
-					},
-					"time": {
-						"type": "special-input",
-						"name": "u_time"
 					}
 				},
 				"return-type": "vec3",
-				"source": "return $$p$$ - vec3(` + -i*0.1 + `, -2, 10);"
+				"source": "return $$p$$ - vec3(0, 0, 25);"
 			}
 		},
 		"p": {
 			"type": "special-input",
 			"name": "p"
 		},
-		"magnitude": 0.05,
-		"freq": 10.0
-	}`
-	), Shader.fromJSON(`
+		"magnitude": 0.1,
+		"freq": 5.0
+	}
+	`), Shader.fromJSON(`
 		{
 			"type": "phong",
 			"ambient": {
-				"color": [0, 1, 0], 
+				"color": [0, 0.75, 0], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -266,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			},
 			"diffuse": {
-				"color": [0, 1, 0], 
+				"color": [0, 0.75, 0], 
 				"amount": {
 					"type": "custom",
 					"dependencies": {
@@ -279,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					"source": "return 0.8;// + 0.4*sin(2.0*$$time$$);"
 				}
 			},
-			"specular": 8,
+			"specular": 100,
 			"normal": {
 				"type": "special-input",
 				"name": "normal"
@@ -294,8 +254,8 @@ document.addEventListener("DOMContentLoaded", () => {
 				"return-type": "vec3",
 				"source": "return normalize(u_camera_pos-p);"
 			}
-		}`)), (dt) => {}));
-	}
+		}
+	`)), (dt) => {}));
 
 
 	graphics.start();
